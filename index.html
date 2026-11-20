@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Min vecka – bento-dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+<header><div><h1 id="h1"></h1><p id="sub"></p></div>
+<div class="hact"><span id="sync" class="sync" role="status" aria-live="polite"></span><button id="menuBtn" aria-controls="menu">Anpassa</button></div></header>
+
+<nav class="mnav" id="mnav" aria-label="Sidor">
+  <button data-pg="over">Översikt</button>
+  <button data-pg="proj">Projekt</button>
+  <button data-pg="backlog">Backlogg</button>
+  <button data-pg="sprint">Sprint & Kanban</button>
+  
+  <button data-pg="wb">Whiteboard</button>
+  <span class="mine" role="group" aria-label="Visa uppgifter">
+    <button data-mine="0">Alla</button>
+    <button data-mine="1">Mina</button>
+  </span>
+</nav>
+<main class="grid" id="grid">
+    <section class="card dl">
+        <h2>Deadlines <small>närmast först</small>
+            </h2>
+        <div id="b-dl">
+            </div>
+    </section>
+    <section class="card cal"><h2><span id="mon"></span>
+      <span class="nav">
+        <button data-nav="-1" aria-label="Föregående månad">‹</button>
+        <button data-nav="1" aria-label="Nästa månad">›</button>
+        <button class="plus" data-evopen="1" aria-label="Ny händelse eller påminnelse"><span>+</span>
+            </button>
+          </span>
+            </h2>
+        <div id="b-cal"></div>
+    </section>
+
+    <section class="card prio"><h2>Prioriteter</h2><div id="b-prio">
+        </div>
+    </section>
+
+    <section class="card sch"><h2><span>Schema <small id="schd">idag</small></span>
+            <button class="pill" data-plan="1" aria-label="Planera schema efter deadlines">Planera</button></h2><div id="b-sch">
+        </div>
+    </section>
+
+    <section class="card dn"><h2><span>Avklarat <small id="dcnt"></small></span>
+    <button class="pill" id="clr">Rensa avklarade</button>
+        </h2><div id="b-dn">
+        </div>
+    </section>
+
+    <section class="card todo"><h2>
+        <span>Att göra <small id="cnt"></small>
+            </span>
+        <button class="plus" data-open="1" aria-label="Lägg till uppgift"><span>+</span></button>
+        </h2><div id="b-todo"></div>
+        <div class="addrow"><button class="add2" data-open="1"><span>+ Lägg till</span></button>
+        </div>
+    </section>
+</main>
+
+<div id="pgs"></div>
+
+<dialog id="dlg" aria-labelledby="dt"><form id="addf"><h3 id="dt">Ny uppgift</h3>
+    <label for="nt">Uppgift</label><input id="nt" type="text" required>
+    <label for="np">Prioritet (valfritt)</label>
+        <select id="np">
+            <option value="">Ingen prio</option>
+            <option value="0">Hög</option>
+            <option value="1" selected>Medel</option>
+            <option value="2">Låg</option>
+        </select>
+    <label for="no">Ägare</label>
+        <select id="no"></select>
+    <label for="nd">Deadline (valfritt)</label>
+        <input id="nd" type="date">
+    <label for="ne">Beräknad tid (för schemaläggning)</label>
+        <select id="ne">
+            <option value="1">1 timme</option>
+            <option value="2" selected>2 timmar</option>
+            <option value="3">3 timmar</option>
+            <option value="4">4 timmar</option>
+            <option value="6">6 timmar</option>
+            <option value="8">8 timmar</option>
+            <option value="12">12 timmar</option>
+            <option value="16">16 timmar</option>
+        </select>
+<label class="chk team-only"><input type="checkbox" id="npriv">Privat – bara du ser uppgiften</label>
+<p class="hint">Prioritet och deadline läggs automatiskt in i korten Prioriteter, Deadlines och Kalender. Har du valt deadline planeras arbetspass in i Schema.</p>
+
+<div class="dact">
+    <button type="button" class="ghost" data-cancel="1">Avbryt</button>
+    <button class="add2" type="submit"><span>Lägg till</span>
+        </button>
+            </div>
+                </form>
+            </dialog>
+    <dialog id="evdlg" aria-labelledby="evh">
+        <form id="evf"><h3 id="evh">Ny händelse</h3>
+            <label for="evk">Typ</label>
+                <select id="evk">
+                    <option value="e">Händelse</option>
+                    <option value="p">Påminnelse</option>
+                </select>
+            <label for="evtitle">Titel</label>
+                <input id="evtitle" type="text" required>
+            <label for="evdate">Datum</label>
+                <input id="evdate" type="date" required>
+            <label for="evend">Till och med (valfritt, för flera dagar)</label>
+                <input id="evend" type="date">
+            <label for="evtime">Tid (valfritt)</label>
+                <input id="evtime" type="time">
+            <label for="evlen">Längd (om tid är vald)</label>
+                <select id="evlen">
+                    <option value="30">30 min</option>
+                    <option value="60" selected>1 timme</option>
+                    <option value="90">1,5 timmar</option>
+                    <option value="120">2 timmar</option>
+                    <option value="180">3 timmar</option>
+                    <option value="240">4 timmar</option>
+                </select>
+            <label for="evnote">Anteckning (valfritt)</label>
+                <input id="evnote" type="text">
+            <label class="chk">
+                    <input type="checkbox" id="evblk">Planera ingen arbetstid dessa dagar (t.ex. semester)
+                </label>
+            <label class="chk team-only">
+                    <input type="checkbox" id="evpriv">Privat – bara du ser händelsen
+                </label>
+    <p class="hint">Läggs automatiskt till i Schema, en post per dag.</p>
+<div class="dact"><button type="button" class="ghost" data-cancel="1">Avbryt</button><button class="add2" type="submit"><span>Lägg till</span></button></div></form></dialog>
+<dialog id="tdlg" aria-labelledby="td-h">
+  <h3 id="td-h">Uppgift</h3>
+ 
+  <label for="td-t">Titel</label>
+  <input id="td-t">
+ 
+  <label for="td-desc">Beskrivning</label>
+  <textarea id="td-desc" rows="3"></textarea>
+ 
+  <label for="td-crit">Kriterier / definition of done</label>
+  <textarea id="td-crit" rows="2"></textarea>
+ 
+  <label for="td-p">Projekt</label>
+  <select id="td-p"></select>
+ 
+  <label for="td-sp">Sprint</label>
+  <select id="td-sp"></select>
+ 
+  <label for="td-sr">Prio i sprint</label>
+  <select id="td-sr"></select>
+ 
+  <label for="td-st">Status</label>
+  <select id="td-st"></select>
+ 
+  <label for="td-o">Ägare</label>
+  <select id="td-o"></select>
+ 
+  <label for="td-est">Tid (timmar)</label>
+  <input id="td-est" type="number" min="0.5" step="0.5">
+ 
+  <label for="td-tg">Taggar (komma-separerar)</label>
+  <input id="td-tg">
+ 
+  <label for="td-note">Anteckning, t.ex. varför den är pausad</label>
+  <textarea id="td-note" rows="2"></textarea>
+
+  <label class="chk team-only"><input type="checkbox" id="td-priv">Privat – bara du ser uppgiften</label>
+ 
+  <div class="dact">
+    <button type="button" class="ghost" data-a="tdx">Avbryt</button>
+    <button type="button" class="add2" data-a="tds"><span>Spara</span></button>
+  </div>
+</dialog>
+
+<!-- Backlogg-sidan -->
+<template id="tpl-backlog">
+  <section class="card">
+    <h2>Ny uppgift i backloggen</h2>
+    <div class="frm">
+      <input data-ad="t" placeholder="Titel" aria-label="Titel">
+      <select data-ad="p" aria-label="Projekt">{{popts}}</select>
+      <select data-ad="e" aria-label="Tid">{{eopts}}</select>
+      <input data-ad="g" placeholder="Taggar, komma-separerade" aria-label="Taggar">
+      <button class="add2" data-a="badd"><span>Lägg till</span></button>
+    </div>
+  </section>
+  <section class="card">
+    <h2><span>Backlogg <small>{{count}} st · plocka in i {{sprint}}</small></span></h2>
+    <div class="frm">
+      <input data-sc="sf" data-fd="bq" value="{{bq}}" placeholder="Sök i backloggen" aria-label="Sök">
+      <select data-sc="sf" data-fd="bp" aria-label="Projekt">{{bpopts}}</select>
+    </div>
+    {{list}}
+  </section>
+</template>
+
+<template id="tpl-brow">
+  <li class="bl">
+    <span class="bt" data-a="open" data-id="{{id}}">{{t}}</span>
+    {{pj}}{{tg}}<span class="tg">{{h}} h</span>{{who}}
+    <button class="pill" data-a="tosp" data-id="{{id}}">→ {{sprint}}</button>
+  </li>
+</template>
+
+<!-- Sprint- och kanban-sidan -->
+<template id="tpl-sprint">
+  <section class="card">
+    <h2><span>Sprint <small>{{n}} dagar ≈ {{weeks}} veckor</small></span><button class="pill" data-a="nsp">+ Ny sprint</button></h2>
+    <input data-sc="sf" data-fd="sq" value="{{sq}}" placeholder="Sök sprint (namn eller datum)" aria-label="Sök sprint">
+    <div class="chips">{{chips}}</div>
+    <div class="frm">
+      <input data-sc="sp" data-fd="n" value="{{name}}" aria-label="Sprintnamn">
+      <label>Start <input type="date" data-sc="sp" data-fd="s" value="{{s}}"></label>
+      <label>Slut <input type="date" data-sc="sp" data-fd="e" value="{{e}}"></label>
+      <button class="pill" data-a="mtg"{{mdis}}>{{mtxt}}</button>
+    </div>
+    <label class="lb">Definition of done för sprinten</label>
+    <textarea rows="2" data-sc="sp" data-fd="dod" placeholder="När är sprinten klar? Vilka kriterier måste vara uppfyllda?">{{dod}}</textarea>
+  </section>
+
+  <section class="card">
+    <h2><span>Timmar i sprinten <small>per person</small></span></h2>
+    {{hrs}}{{stale}}
+  </section>
+
+  <section class="card">
+    <h2>
+      <span>Kanban <small>{{shown}} av {{all}}</small></span>
+    </h2>
+    <div class="frm">
+      <input data-sc="sf" data-fd="q" value="{{q}}" placeholder="Sök uppgift" aria-label="Sök uppgift">
+      <input data-sc="sf" data-fd="tag" value="{{tag}}" placeholder="Tagg" aria-label="Tagg">
+      <select data-sc="sf" data-fd="who" aria-label="Tilldelad"><option value="">Alla personer</option>{{whoopts}}</select>
+      <select data-sc="sf" data-fd="st" aria-label="Status"><option value="">Alla status</option>{{stopts}}</select>
+    </div>
+    <div class="kb">{{cols}}</div>
+  </section>
+</template>
+
+<template id="tpl-chip">
+  <button class="pill{{on}}" data-a="sp" data-id="{{id}}">{{label}}</button>
+</template>
+
+<template id="tpl-hr">
+  <div class="hr"><span>{{name}}</span><div class="t"><i style="width:{{w}}%"></i></div><b>{{t}} h</b><small>{{d}} klara</small></div>
+</template>
+
+<template id="tpl-kcol">
+  <div class="kcol" data-col="{{col}}"><h3>{{name}} <small>{{n}}</small></h3>{{cards}}</div>
+</template>
+
+<template id="tpl-kc">
+  <div class="kc" draggable="true" data-id="{{id}}">
+    <b data-a="open" data-id="{{id}}">{{t}}</b>
+    <div class="mt">{{pj}}{{tg}}<span>{{h}} h</span>{{sr}}{{who}}</div>
+    {{nt}}{{warn}}
+    <div class="mv">
+      <button data-a="mv" data-id="{{id}}" data-d="-1" aria-label="Flytta åt vänster">‹</button>
+      <button data-a="mv" data-id="{{id}}" data-d="1" aria-label="Flytta åt höger">›</button>
+    </div>
+  </div>
+</template>
+
+<!-- Projekt-sidan -->
+<template id="tpl-proj">
+  <section class="card">
+    <h2><span>Finns alltid <small>gäller varje projekt (Var / Const)</small></span></h2>
+    <ul class="al">{{always}}</ul>
+    <div class="frm">
+      <input data-ad="al" placeholder="Ny punkt, t.ex. Const: ..." aria-label="Ny punkt">
+      <button class="pill" data-a="aadd">Lägg till</button>
+    </div>
+    <div class="frm">
+      <label>Påminn om uppdatering efter <input type="number" min="1" max="60" data-sc="cfg" data-fd="stale" value="{{stale}}" style="width:70px"> dagar</label>
+    </div>
+  </section>
+  <div class="row2">{{cards}}</div>
+  <div><button class="add2" data-a="padd"><span>+ Nytt projekt</span></button></div>
+</template>
+
+<template id="tpl-arow">
+  <li class="bl">{{t}}<button class="x" data-a="adel" data-id="{{id}}" aria-label="Ta bort">×</button></li>
+</template>
+
+<template id="tpl-pcard">
+  <section class="card" style="border-top:6px solid {{c}}">
+    <h2>
+      <input class="ttl" data-sc="pj" data-id="{{id}}" data-fd="n" value="{{n}}" aria-label="Projektnamn">
+      <button class="x" data-a="pdel" data-id="{{id}}" aria-label="Ta bort projekt">×</button>
+    </h2>
+    <div class="frm">
+      <select data-sc="pj" data-id="{{id}}" data-fd="ps" aria-label="Status">{{psopts}}</select>
+      <small class="tg">Uppdaterad för {{d}} d sedan · {{done}}/{{total}} uppgifter klara</small>
+    </div>
+    {{stale}}
+    <label class="lb">Braindump</label>
+    <textarea rows="4" data-sc="pj" data-id="{{id}}" data-fd="dump" placeholder="Skriv av dig. Sortera sen.">{{dump}}</textarea>
+    {{note}}
+    <label class="lb">Mappar och länkar</label>
+    <ul>{{links}}</ul>
+    <div class="frm">
+      <input data-ad="lt{{id}}" placeholder="Namn" aria-label="Länknamn">
+      <input data-ad="lu{{id}}" placeholder="Länk till mapp" aria-label="Länk">
+      <button class="pill" data-a="ladd" data-id="{{id}}">+ Länk</button>
+    </div>
+    <label class="lb">Finns alltid</label>
+    <ul>{{chk}}</ul>
+  </section>
+</template>
+
+<template id="tpl-pnote">
+  <label class="lb">Anteckning: varför är projektet pausat eller stannat av?</label>
+  <textarea rows="2" data-sc="pj" data-id="{{id}}" data-fd="note">{{note}}</textarea>
+</template>
+
+<template id="tpl-link">
+  <li class="bl"><a href="{{u}}" target="_blank" rel="noopener">{{t}}</a><button class="x" data-a="ldel" data-id="{{id}}" data-i="{{i}}" aria-label="Ta bort länk">×</button></li>
+</template>
+
+<template id="tpl-chk">
+  <li><label class="ck"><input type="checkbox" data-sc="chk" data-id="{{id}}" data-fd="{{aid}}"{{checked}}> {{t}}</label></li>
+</template>
+
+
+
+<!--//--WHITEBOARD--//-->
+
+<template id="wbtpl">
+  <section class="card">
+    <h2><span>Whiteboard <small id="wmsg"></small></span></h2>
+ 
+    <div class="wtb" role="toolbar" aria-label="Whiteboard-verktyg">
+      <button class="pill" data-w="tool:sel" aria-pressed="true">Markera</button>
+      <button class="pill" data-w="tool:pen" aria-pressed="false">Rita</button>
+      <button class="pill" data-w="tool:erase" aria-pressed="false">Sudda</button>
+      <button class="pill" data-w="tool:link" aria-pressed="false">Pil</button>
+      <span class="wsep"></span>
+      <button class="pill" data-w="add:box">Ruta</button>
+      <button class="pill" data-w="add:round">Start/Slut</button>
+      <button class="pill" data-w="add:dia">Beslut</button>
+      <button class="pill" data-w="add:text">Text</button>
+      <button class="pill" data-w="add:note">Lapp</button>
+      <span class="wdd">
+        <button class="pill" data-w="shapes" aria-haspopup="true" aria-expanded="false">Former ▾</button>
+        <div class="wmenu" id="wmenu" role="menu" hidden>
+          <button data-w="shape:circle" role="menuitem">● Cirkel</button>
+          <button data-w="shape:tri" role="menuitem">▲ Triangel</button>
+          <button data-w="shape:star" role="menuitem">★ Stjärna</button>
+          <button data-w="shape:heart" role="menuitem">♥ Hjärta</button>
+          <button data-w="shape:hex" role="menuitem">⬡ Sexhörning</button>
+          <button data-w="tool:free" aria-pressed="false" role="menuitem">✎ Fri form</button>
+        </div>
+      </span>
+      <button class="pill" data-w="file">Bild/fil</button>
+      <span class="wdd">
+        <button class="pill" data-w="zmenu" aria-haspopup="true" aria-expanded="false">Ordning ▾</button>
+        <div class="wmenu" id="wzmenu" role="menu" hidden>
+          <button data-w="z:front" role="menuitem">Flytta överst</button>
+          <button data-w="z:up" role="menuitem">Flytta framåt</button>
+          <button data-w="z:down" role="menuitem">Flytta bakåt</button>
+          <button data-w="z:back" role="menuitem">Flytta underst</button>
+        </div>
+      </span>
+      <span class="wsep"></span>
+      <label>Penna <input type="color" id="wpc" value="#3A52E0"></label>
+      <label>Tjocklek
+        <select id="wpw">
+          <option value="2">Tunn</option>
+          <option value="4" selected>Medel</option>
+          <option value="8">Tjock</option>
+        </select>
+      </label>
+      <label>Fyllning <input type="color" id="wfc" value="#FFF3B0"></label>
+      <span class="wsep"></span>
+      <button class="pill" data-w="undo">Ångra</button>
+      <button class="pill" data-w="del">Ta bort</button>
+      <button class="pill" data-w="clear">Rensa tavlan</button>
+      <input type="file" id="wfile" accept="image/*,.pdf,.txt,.doc,.docx,.xls,.xlsx,.ppt,.pptx" multiple hidden>
+    </div>
+ 
+    <p class="hint2" id="whint"></p>
+ 
+    <div id="wbb">
+      <div id="wbv">
+        <div id="wel"></div>
+        <svg id="wsv" xmlns="http://www.w3.org/2000/svg"></svg>
+      </div>
+    </div>
+  </section>
+</template>
+
+
+<aside id="menu" aria-label="Anpassa dashboard">
+      <h3>Anpassa 
+        <button id="close" aria-label="Stäng">×
+            </button>
+          </h3>
+    <h4>Tema
+        </h4>
+    <div class="seg" id="seg-th">
+        <button data-th="auto">Auto
+
+                </button>
+        <button data-th="light">Ljust
+
+                </button>
+        <button data-th="dark">Mörkt
+
+                </button>
+</div>
+    <h4>Layout
+
+        </h4>
+    <div class="seg" id="seg-lay">
+        <button data-lay="bento">Bento
+
+            </button>
+        <button data-lay="two">Två kolumner
+
+            </button>
+        <button data-lay="list">Lista
+
+            </button>
+</div>
+
+<div class="team-only">
+<h4>Konto</h4>
+<p class="hint2" id="acct"></p>
+<div class="seg" style="margin-top:8px">
+    <button id="logout">Logga ut</button>
+</div>
+</div>
+
+<h4>Visa kort</h4>
+<div id="cardvis"></div>
+<div class="seg" style="margin-top:8px">
+    <button id="layReset">Återställ egen layout</button>
+</div>
+
+<h4>Redigera innehåll
+
+</h4>
+
+<div class="seg">
+    <button id="editBtn" aria-pressed="false">Redigeringsläge
+
+            </button>
+</div>
+
+<h4>Planering
+
+</h4>
+<div class="seg">
+    <button id="planOn" aria-pressed="true">Automatisk planering
+
+        </button>
+    <button id="pwk" aria-pressed="false">Planera helger
+
+        </button>
+</div>
+    
+<div class="crow">
+    <label for="pstart">Arbetsdag börjar
+
+        </label>
+    <input type="time" id="pstart">
+</div>
+
+<div class="crow">
+        <label for="pend">Arbetsdag slutar
+
+            </label>
+        <input type="time" id="pend">
+</div>
+
+<div class="crow">
+    <label for="pmax">Max timmar per dag
+
+        </label>
+    <input type="number" id="pmax" min="1" max="12" step="1" style="width:70px">
+</div>
+
+<div class="seg">
+    <button id="planNow">Planera om nu
+
+        </button>
+</div>
+
+<h4>Personer
+
+</h4>
+<div id="ppl">
+
+</div>
+<div class="seg" style="margin-top:8px">
+    <button id="addP">+ Lägg till person
+
+    </button>
+</div>
+
+<h4>Kortfärger
+
+</h4>
+<div id="cols">
+
+</div>
+
+<div class="seg" style="margin-top:10px">
+    <button id="reset">Återställ färger
+
+    </button>
+</div>
+</aside>
+
+<!-- Inloggning (visas bara när appen är kopplad till Supabase) -->
+<div id="gate" hidden>
+  <section class="card gcard">
+    <h2 id="g-h">Logga in</h2>
+    <p id="g-msg" class="g-msg" role="status" aria-live="polite"></p>
+
+    <form id="g-auth">
+      <label for="g-name" class="g-su">Ditt namn</label>
+      <input id="g-name" class="g-su" autocomplete="name">
+      <label for="g-email">E-post</label>
+      <input id="g-email" type="email" required autocomplete="email">
+      <label for="g-pw">Lösenord</label>
+      <input id="g-pw" type="password" required minlength="8" autocomplete="current-password">
+      <button class="add2" type="submit"><span id="g-go">Logga in</span></button>
+      <p class="g-alt">
+        <button type="button" class="lnk" id="g-mode">Inget konto? Skapa ett</button>
+        <button type="button" class="lnk" id="g-forgot">Glömt lösenordet?</button>
+      </p>
+    </form>
+
+    <form id="g-team" hidden>
+      <p>Du är inte med i något team än. Skapa ett här, eller öppna inbjudningslänken du har fått av någon i teamet.</p>
+      <label for="g-tname">Teamets namn</label>
+      <input id="g-tname" required maxlength="80">
+      <label for="g-tme">Ditt namn</label>
+      <input id="g-tme" required maxlength="60">
+      <button class="add2" type="submit"><span>Skapa team</span></button>
+      <p class="g-alt"><button type="button" class="lnk" data-out="1">Logga ut</button></p>
+    </form>
+
+    <form id="g-reset" hidden>
+      <label for="g-newpw">Nytt lösenord</label>
+      <input id="g-newpw" type="password" required minlength="8" autocomplete="new-password">
+      <button class="add2" type="submit"><span>Spara lösenord</span></button>
+    </form>
+  </section>
+</div>
+
+<!-- Supabase, inställningar och appen. db.js laddar script.js, sprint.js och whiteboard.js. -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script src="db.js"></script>
+</body>
+</html>
